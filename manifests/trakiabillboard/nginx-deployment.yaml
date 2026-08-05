@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trakiabillboard-nginx
+  namespace: trakiabillboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: trakiabillboard-nginx }
+  template:
+    metadata:
+      labels: { app: trakiabillboard-nginx }
+    spec:
+      containers:
+        - name: nginx
+          image: <твой-registry>/trakiabillboard-php-nginx:7.4
+          ports:
+            - containerPort: 80
+          env:
+            - name: WEB_DOCUMENT_ROOT
+              value: /app

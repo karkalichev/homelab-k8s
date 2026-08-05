@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trakiabillboard-db
+  namespace: trakiabillboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: trakiabillboard-db }
+  template:
+    metadata:
+      labels: { app: trakiabillboard-db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          envFrom:
+            - secretRef:
+                name: trakiabillboard-db-secret
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: trakiabillboard-db-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trakiabillboard-db-pvc
+  namespace: trakiabillboard
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trakiabillboard-db
+  namespace: trakiabillboard
+spec:
+  selector: { app: trakiabillboard-db }
+  ports:
+    - port: 5432
