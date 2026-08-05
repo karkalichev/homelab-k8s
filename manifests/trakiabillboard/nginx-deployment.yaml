@@ -1,3 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trakiabillboard-app-config
+  namespace: trakiabillboard
+data:
+  db.php: |
+    <?php
+    return [
+        'class' => 'yii\db\Connection',
+        'dsn' => 'pgsql:dbname=trakiabillboards;host=trakiabillboard-db',
+        'username' => 'trakiabillboards',
+        'password' => getenv('POSTGRES_PASSWORD') ?: '',
+        'charset' => 'utf8',
+    ];
+  params-local.php: |
+    <?php
+    defined('DEV_SERVER') or define('DEV_SERVER', true);
+    defined('YII_DEBUG') or define('YII_DEBUG', true);
+    defined('YII_ENV') or define('YII_ENV', 'dev');
+    return [];
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,9 +35,36 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: <твой-registry>/trakiabillboard-php-nginx:7.4
+          # Build locally: cd trakiabillboard.com && docker build -t trakiabillboard-php-nginx:7.4 .
+          image: trakiabillboard-php-nginx:7.4
+          imagePullPolicy: Never
           ports:
             - containerPort: 80
+          envFrom:
+            - secretRef:
+                name: trakiabillboard-db-secret
           env:
             - name: WEB_DOCUMENT_ROOT
               value: /app
+          volumeMounts:
+            - name: app-config
+              mountPath: /app/protected/config/db.php
+              subPath: db.php
+            - name: app-config
+              mountPath: /app/protected/config/params-local.php
+              subPath: params-local.php
+      volumes:
+        - name: app-config
+          configMap:
+            name: trakiabillboard-app-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trakiabillboard-nginx
+  namespace: trakiabillboard
+spec:
+  selector: { app: trakiabillboard-nginx }
+  ports:
+    - port: 80
+      targetPort: 80
