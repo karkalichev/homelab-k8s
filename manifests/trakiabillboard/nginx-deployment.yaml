@@ -36,7 +36,7 @@ spec:
       containers:
         - name: nginx
           # Build locally: cd trakiabillboard.com && docker build -t trakiabillboard-php-nginx:7.4 .
-          image: karkalichev/trakiabillboard-php-nginx:7.4
+          image: localhost:5050/trakiabillboard-php-nginx:3a32769
           imagePullPolicy: Always
           ports:
             - containerPort: 80
